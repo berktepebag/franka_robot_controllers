@@ -1,0 +1,9 @@
+<library path="lib/libfranka_robot_controller_pi">
+  <class name="franka_robot_controllers/JointPositionController"
+         type="franka_robot_controllers::JointPositionController"
+         base_class_type="controller_interface::ControllerBase">
+    <description>
+      Franka robot joint position controller, Pascal Institute
+    </description>
+  </class>
+</library>
