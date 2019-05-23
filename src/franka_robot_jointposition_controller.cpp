@@ -35,8 +35,8 @@ namespace franka_robot_controllers{
 		{
 			try{
 				position_joint_handles_[i] = position_joint_interface_->getHandle(joint_names[i]);
-			}
-			catch(const hardware_interface::HardWareInterfaceException& e){
+			}									
+			catch(const hardware_interface::HardwareInterfaceException& e){
 				ROS_ERROR_STREAM("Could not get joint handles: " << e.what());
 				return false;
 			}
@@ -50,7 +50,7 @@ namespace franka_robot_controllers{
 
 			for (int i = 0; i < q_start.size(); ++i)
 			{
-				if (std::bas(position_joint_handles_[i].getPosition() - q_start[i] > 0.1))
+				if (std::abs(position_joint_handles_[i].getPosition() - q_start[i] > 0.1))
 				{
 
 					ROS_ERROR_STREAM("Robot is not in the starting position. This is only for safety of the robot. If you do not want to use this function just turn safety_check to false. Run `roslaunch franka_example_controllers move_to_start.launch robot_ip:=<robot-ip> first to move Franka robot to starting position.");
