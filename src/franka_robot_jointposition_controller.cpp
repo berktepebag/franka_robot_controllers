@@ -28,7 +28,7 @@ namespace franka_robot_controllers{
 
 		initial_pose_.resize(7);
 		// Set speed multipliers to zero in order to prevent robot move without command at the beginning
-		speed_mult = {0,0,0,0,0,0,0};		
+		speed_mult = {1,0,0,0,0,0,0};		
 		// Set joint commands size equal to joint number
 		joint_commands.resize(7);
 		// Set Velocity limits size equal to joint number
@@ -70,7 +70,7 @@ namespace franka_robot_controllers{
 			}
 		}
 
-		bool safety_check = true;
+		bool safety_check = false;
 
 		if (safety_check)
 		{
@@ -114,13 +114,17 @@ namespace franka_robot_controllers{
 		{
 			error = joint_position_goals[joint_id] - position_joint_handles_[joint_id].getPosition();
 
-			if (std::abs(error)>0.01 || seconds_passed <= 0.001){
+			if (std::fabs(error)>0.01 || seconds_passed <= 0.001){
 
 				int direction = std::signbit(error)==1?-1:1;
+
 				joint_commands[joint_id] += (direction)*joint_velocity_limits[joint_id]*period.toSec();
+				/*
+				std::cout << "joint [" << joint_id<<"] error: " << error<<std::endl;
 				std::cout << "joint_commands[" << joint_id<<"]: " << joint_commands[joint_id]<<std::endl;
 				std::cout << "speed_mult[" << joint_id<<"]: " << speed_mult[joint_id]<<std::endl;
 				std::cout << "joint_velocity_limits[" << joint_id<<"]: " << joint_velocity_limits[joint_id]<<std::endl;
+				*/
 				
 				position_joint_handles_[joint_id].setCommand(joint_commands[joint_id]);
 			}
