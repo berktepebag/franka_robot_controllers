@@ -9,6 +9,8 @@
 #include <ros/ros.h>
 #include <ros/node_handle.h>
 #include <ros/time.h>
+#include <sensor_msgs/JointState.h>
+
 
 namespace franka_robot_controllers{
 
@@ -19,14 +21,36 @@ namespace franka_robot_controllers{
         std::vector<hardware_interface::JointHandle> position_joint_handles_;
         
         ros::Duration elapsed_time_;
-        std::array<double, 7> initial_pose_{};
+        //std::array<double, 7> initial_pose_{};
+
+        std::vector<double> initial_pose_;
+        std::vector<double> joint_position_goals;
+        std::vector<double> speed_mult;
+        std::vector<double> joint_velocity_limits;
+        std::vector<double> joint_commands;
+
+        ros::Subscriber teleop_cmd_sub;
+
+
     public:
         bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& nh) override;
         void starting(const ros::Time&) override;
         void update(const ros::Time&, const ros::Duration& period) override;  
 
-    };
-}
+        void frankaRobotTeleopCallback(const sensor_msgs::JointState::ConstPtr& msg);
+
+        void setJointPositionGoals(std::vector<double> jointPositionGoalsMessage){
+            joint_position_goals = jointPositionGoalsMessage;}
+
+        std::vector<double> getJointPositionGoals() const 
+        {return joint_position_goals;}
+
+        void setJointSpeedLimits(std::vector<double> jointVelocityMessage)
+        {speed_mult = jointVelocityMessage;}    
+        std::vector<double> getJointSpeedLimits(){return speed_mult;}
+
+        };
+    }
 
 #endif
 

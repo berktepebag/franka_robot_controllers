@@ -6,10 +6,38 @@
 #include <hardware_interface/hardware_interface.h>
 
 namespace franka_robot_controllers{
+	
+	void JointPositionController::frankaRobotTeleopCallback(const sensor_msgs::JointState::ConstPtr& msg) {
+
+		if (msg->name.size() != msg->position.size())
+		{
+			ROS_ERROR("Name and Position numbers are not equal! Check panda_arm_teleop topic.");
+			return;
+		}        
+
+		this->setJointPositionGoals(msg->position);
+		this->setJointSpeedLimits(msg->velocity); 		
+
+		// Change joint velocities
+		joint_velocity_limits = {speed_mult[0]*M_PI/180,speed_mult[1]*M_PI/180,speed_mult[2]*M_PI/180,speed_mult[3]*M_PI/180,speed_mult[4]*M_PI/180,speed_mult[5]*M_PI/180,speed_mult[6]*M_PI/180};
+	}
 
 	bool JointPositionController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& nh){
 
 		ROS_INFO_STREAM(" ******* \n Starting Franka Robot Joint Position Controller \n *******");
+
+		initial_pose_.resize(7);
+		// Set speed multipliers to zero in order to prevent robot move without command at the beginning
+		speed_mult = {0,0,0,0,0,0,0};		
+		// Set joint commands size equal to joint number
+		joint_commands.resize(7);
+		// Set Velocity limits size equal to joint number
+		joint_velocity_limits.resize(7);
+
+		// Subscribe to the teleop_cmd
+		teleop_cmd_sub = nh.subscribe("/franka_robot/teleop_cmd", 1000, &JointPositionController::frankaRobotTeleopCallback, this);
+
+
 
 		position_joint_interface_ = robot_hw->get<hardware_interface::PositionJointInterface>();
 
@@ -63,25 +91,38 @@ namespace franka_robot_controllers{
 
 	void JointPositionController::starting(const ros::Time&) {
 
-		for (int i = 0; i < 7; ++i)
-		{
-			initial_pose_[i] = position_joint_handles_[i].getPosition();
-		}		
+	//Set the first command to current joint positions
+		for (size_t i = 0; i < 7; ++i) {
+			joint_commands[i] = position_joint_handles_[i].getPosition();
+		}
+		
 		elapsed_time_ = ros::Duration(0.0);
+
+		// This prevents shakes at the beginning
+		joint_position_goals = {0, -M_PI_4, 0, -3 * M_PI_4, 0, M_PI_2, M_PI_4};
 	}
+
 	void JointPositionController::update(const ros::Time&, const ros::Duration& period){
 
+		ros::spinOnce();
+
 		elapsed_time_ += period;
+		double seconds_passed = elapsed_time_.toSec();		
+		double error = 0;
 
-		double delta_angle = M_PI / 16 * (1 - std::cos(M_PI / 5.0 * elapsed_time_.toSec())) * 0.2;
-
-		for (int i = 0; i < 7; ++i)
+		for (int joint_id = 0; joint_id < 7; ++joint_id)
 		{
-			if (i == 4)
-			{
-				position_joint_handles_[i].setCommand(initial_pose_[i] - delta_angle);
-			}else{
-				position_joint_handles_[i].setCommand(initial_pose_[i] + delta_angle);
+			error = joint_position_goals[joint_id] - position_joint_handles_[joint_id].getPosition();
+
+			if (std::abs(error)>0.01 || seconds_passed <= 0.001){
+
+				int direction = std::signbit(error)==1?-1:1;
+				joint_commands[joint_id] += (direction)*joint_velocity_limits[joint_id]*period.toSec();
+				std::cout << "joint_commands[" << joint_id<<"]: " << joint_commands[joint_id]<<std::endl;
+				std::cout << "speed_mult[" << joint_id<<"]: " << speed_mult[joint_id]<<std::endl;
+				std::cout << "joint_velocity_limits[" << joint_id<<"]: " << joint_velocity_limits[joint_id]<<std::endl;
+				
+				position_joint_handles_[joint_id].setCommand(joint_commands[joint_id]);
 			}
 		}
 	}

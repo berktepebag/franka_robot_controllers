@@ -34,7 +34,7 @@ find_package(Franka 0.5.0 REQUIRED)
 #)
 
 catkin_package(
-  LIBRARIES franka_robot_controller_pi
+  LIBRARIES ${PROJECT_NAME}
   CATKIN_DEPENDS
     controller_interface
     dynamic_reconfigure
@@ -48,36 +48,41 @@ catkin_package(
   DEPENDS Franka
 )
 
-
-add_library(franka_robot_controller_pi
-  src/franka_robot_jointposition_controller.cpp
+add_executable(franka_robot_teleop src/teleop_cmd.cpp)
+target_link_libraries(franka_robot_teleop ${catkin_LIBRARIES})
+include_directories(
+  include
+  ${catkin_INCLUDE_DIRS}
 )
 
 
-add_dependencies(franka_robot_controller_pi
+add_library(${PROJECT_NAME}
+  src/franka_robot_jointposition_controller.cpp  
+)
+add_dependencies(${PROJECT_NAME}
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS}
   ${PROJECT_NAME}_generate_messages_cpp
   ${PROJECT_NAME}_gencpp
   ${PROJECT_NAME}_gencfg
 )
-
-target_link_libraries(franka_robot_controller_pi PUBLIC
-  ${Franka_LIBRARIES}
+target_link_libraries(${PROJECT_NAME} PUBLIC
+  ${Franka_LIBRARIES}  
   ${catkin_LIBRARIES}
 )
 
-target_include_directories(franka_robot_controller_pi SYSTEM PUBLIC
+target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC
   ${Franka_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
 )
-target_include_directories(franka_robot_controller_pi PUBLIC
+target_include_directories(${PROJECT_NAME} PUBLIC
   include
+   ${catkin_INCLUDE_DIRS}
 )
 
 ## Installation
-install(TARGETS franka_robot_controller_pi
+install(TARGETS ${PROJECT_NAME}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -106,9 +111,9 @@ if(CLANG_TOOLS)
     ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h
   )
-  add_format_target(franka_robot_controller_pi FILES ${SOURCES} ${HEADERS})
-  add_tidy_target(franka_robot_controller_pi
+  add_format_target(${PROJECT_NAME} FILES ${SOURCES} ${HEADERS})
+  add_tidy_target(${PROJECT_NAME}
     FILES ${SOURCES}
-    DEPENDS franka_robot_controller_pi
+    DEPENDS ${PROJECT_NAME}
   )
 endif()
