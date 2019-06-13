@@ -4,8 +4,6 @@
 #pragma once
 
 #include <ros/ros.h>
-#include <std_msgs/String.h>
-#include <std_msgs/Float64.h>
 #include <sensor_msgs/JointState.h>
 
 #include <iostream>
@@ -40,7 +38,6 @@ public:
 	std::vector<std::string> getJointNames() const{
 		return joint_names;
 	}
-
 	void setJointStartPosition(){
 		//Set joint goal positions to starting position
 		joint_goal_positions = {0, -M_PI_4, 0, -3 * M_PI_4, 0, M_PI_2, M_PI_4};
@@ -54,8 +51,10 @@ public:
 	std::vector<double> getJointGoalPositions(){
 		return joint_goal_positions;
 	}
-
 	void setJointVelocitiesZero(){
+		joint_velocities = {0,0,0,0,0,0,0};
+	}	
+	void setJointVelocitiesOne(){
 		joint_velocities = {1,1,1,1,1,1,1};
 	}
 	void setJointVelocity(int joint_id, float joint_velocity){
@@ -64,15 +63,14 @@ public:
 	std::vector<double> getJointVelocities(){
 		return joint_velocities;
 	}
-
-	void setJointEffort(){
+	void setJointEfforts(){
 		joint_efforts = {1,1,1,1,1,1,1};
 	}
 	void setJointEffort(int joint_id, float joint_effort){
 		joint_efforts[joint_id] = joint_effort;
 	}
-
-
+	double deg2rad(double degree){
+		return degree * M_PI /180;
+	}
 };
-
 #endif
