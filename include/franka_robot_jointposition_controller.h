@@ -27,9 +27,14 @@ namespace franka_robot_controllers{
         std::vector<double> joint_position_goals;
         std::vector<double> speed_mult;
         std::vector<double> joint_velocity_limits;
+        std::vector<double> current_joint_velocity_limits;
+        std::vector<double> joint_accelerations;
+
         std::vector<double> joint_commands;
 
         ros::Subscriber teleop_cmd_sub;
+
+
 
 
     public:
@@ -42,14 +47,15 @@ namespace franka_robot_controllers{
         void setJointPositionGoals(std::vector<double> jointPositionGoalsMessage){
             joint_position_goals = jointPositionGoalsMessage;}
 
-        std::vector<double> getJointPositionGoals() const 
-        {return joint_position_goals;}
+            std::vector<double> getJointPositionGoals() const 
+            {return joint_position_goals;}
 
-        void setJointSpeedLimits(std::vector<double> jointVelocityMessage)
-        {speed_mult = jointVelocityMessage;}    
-        std::vector<double> getJointSpeedLimits(){return speed_mult;}
+            void setJointSpeedLimits(std::vector<double> jointVelocityMessage)
+            {speed_mult = jointVelocityMessage;}    
+            std::vector<double> getJointSpeedLimits(){return speed_mult;}
 
         };
+        bool debugging = false;
     }
 
 #endif

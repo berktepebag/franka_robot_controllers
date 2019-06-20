@@ -33,6 +33,9 @@ namespace franka_robot_controllers{
 		joint_commands.resize(7);
 		// Set Velocity limits size equal to joint number
 		joint_velocity_limits.resize(7);
+		current_joint_velocity_limits.resize(7);
+		//Each joint is acting differently with given commands. These variables make sure they are working without jerk.
+		joint_accelerations = {25,5,15,15,20,20,20};
 
 		// Subscribe to the teleop_cmd
 		teleop_cmd_sub = nh.subscribe("/franka_robot/teleop_cmd", 1000, &JointPositionController::frankaRobotTeleopCallback, this);
@@ -120,14 +123,25 @@ namespace franka_robot_controllers{
 			double error_check_value = 0.01;	
 
 			if (std::fabs(error)>error_check_value || seconds_passed <= 0.001){
-		
-				if (std::fabs(error) < joint_velocity_limits[joint_id]/4)
-				{
-					//std::cout << "slowing down" << std::endl;
-					joint_velocity_limits[joint_id] /= 1.02; // 
-				}		
 
-				joint_commands[joint_id] += (direction)*joint_velocity_limits[joint_id]*period.toSec();
+				if (std::fabs(error) < joint_velocity_limits[joint_id]/8)
+				{
+					if(debugging) std::cout << "slowing down" << std::endl;
+					current_joint_velocity_limits[joint_id] /= 1.02; // 
+				}		
+				else if (std::fabs(joint_velocity_limits[joint_id]-std::fabs(position_joint_handles_[joint_id].getVelocity()))>1*M_PI/180)
+				{
+					if(debugging) std::cout << "accelerating" << std::endl;
+					current_joint_velocity_limits[joint_id] += joint_accelerations[joint_id]*M_PI/180*period.toSec();
+				}
+				else{
+					current_joint_velocity_limits[joint_id] = joint_velocity_limits[joint_id];
+				}
+
+				if(debugging) std::cout << "current speed: " << position_joint_handles_[joint_id].getVelocity()*180/M_PI << std::endl;
+		
+
+				joint_commands[joint_id] += (direction)*current_joint_velocity_limits[joint_id]*period.toSec();
 
 				position_joint_handles_[joint_id].setCommand(joint_commands[joint_id]);
 			}
