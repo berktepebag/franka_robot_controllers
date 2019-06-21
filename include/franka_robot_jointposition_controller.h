@@ -47,15 +47,21 @@ namespace franka_robot_controllers{
         void setJointPositionGoals(std::vector<double> jointPositionGoalsMessage){
             joint_position_goals = jointPositionGoalsMessage;}
 
-            std::vector<double> getJointPositionGoals() const 
+        std::vector<double> getJointPositionGoals() const 
             {return joint_position_goals;}
 
-            void setJointSpeedLimits(std::vector<double> jointVelocityMessage)
+        void setJointSpeedLimits(std::vector<double> jointVelocityMessage)
             {speed_mult = jointVelocityMessage;}    
             std::vector<double> getJointSpeedLimits(){return speed_mult;}
 
-        };
+        double deg2rad(double degree){
+            return degree * M_PI / 180;}
+
+        double rad2deg(double radian){
+            return radian / M_PI * 180;}
+
         bool debugging = false;
+        };
     }
 
 #endif

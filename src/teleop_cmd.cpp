@@ -23,6 +23,9 @@ int main(int argc, char **argv)
 	//Set joint velocities to zero in order to prevent unexpected movements at the beginning.
 	franka_robot.setJointVelocitiesZero();	
 
+	//nh.getParam("panda_joi")
+
+	double add = 0.25;
 	while(ros::ok()){		
 
 		franka_robot.setJointVelocitiesOne();
@@ -31,11 +34,30 @@ int main(int argc, char **argv)
 		std::cout << "Enter new joint number (1-7) to be moved or 0 to set Franka robot to start position." << std::endl;
 		std::cin >> joint_id;
 
-		if (joint_id == 0)
+		if (joint_id>7)
+		{
+			int joint_speed;
+			std::cout << "Enter new joint speed." << std::endl;
+			std::cin >> joint_speed;
+
+			if (joint_id==8) add = 2*0.25;
+			else if (joint_id==9) add = 2*-0.25;
+			
+			std::vector<double> trial_pose{0+add, -M_PI_4+add, 0+add, -3 * M_PI_4-add/2, 0+add, M_PI_2+add, M_PI_4+add};
+
+			int counter = 0;
+			for(double pose : trial_pose){
+				std::cout << "joint["<<counter+1<<"]: " <<pose << std::endl;
+				franka_robot.setJointGoalPosition(counter,pose);
+				franka_robot.setJointVelocity(counter,joint_speed);
+				counter++;
+			}			
+		}
+		else if (joint_id == 0)
 		{
 			franka_robot.setJointStartPosition();
 		}
-		else if(joint_id>0 || joint_id <=7){
+		else if(joint_id>0 & joint_id <=7){
 
 			double newJointPos = 0;
 			std::cout << "Enter new joint (exact) position (- or +) in degree's for joint " << joint_id << std::endl;
@@ -52,7 +74,7 @@ int main(int argc, char **argv)
 			
 		}
 		else{
-			std::cout << "Joint id must be between 0-7 (included)! Please fix your command!" << std::endl;
+			std::cout << "Joint id must be between 1-7 (included)! Please fix your command!" << std::endl;
 			continue;
 		}
 
