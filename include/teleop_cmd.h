@@ -17,9 +17,12 @@ private:
 	std::vector<double> joint_goal_positions;
 	std::vector<double> joint_velocities;
 	std::vector<double> joint_efforts;
+
 	
 public:
 	int const FRANKA_ROBOT_JOINT_NUMBER = 7;
+	std::vector<double> const  start_pose = {0, -M_PI_4, 0, -3 * M_PI_4, 0, M_PI_2, M_PI_4};
+
 
 	void setJointNames(){
 		//Sets default names
@@ -40,7 +43,7 @@ public:
 	}
 	void setJointStartPosition(){
 		//Set joint goal positions to starting position
-		joint_goal_positions = {0, -M_PI_4, 0, -3 * M_PI_4, 0, M_PI_2, M_PI_4};
+		joint_goal_positions = start_pose;
 	}
 	void setJointGoalPosition(int joint_id, float joint_goal_position){
 		joint_goal_positions[joint_id] = joint_goal_position;
@@ -48,19 +51,19 @@ public:
 	double getJointGoalPosition(int joint_id){ 
 		return joint_goal_positions[joint_id];
 	}
-	std::vector<double> getJointGoalPositions(){
+	std::vector<double> getJointGoalPositions() const{
 		return joint_goal_positions;
 	}
 	void setJointVelocitiesZero(){
 		joint_velocities = {0,0,0,0,0,0,0};
 	}	
 	void setJointVelocitiesOne(){
-		joint_velocities = {1,1,1,1,1,1,1};
+		joint_velocities = {deg2rad(1),deg2rad(1),deg2rad(1),deg2rad(1),deg2rad(1),deg2rad(1),deg2rad(1),};
 	}
 	void setJointVelocity(int joint_id, float joint_velocity){
 		joint_velocities[joint_id] = joint_velocity;
 	}
-	std::vector<double> getJointVelocities(){
+	std::vector<double> getJointVelocities() const{
 		return joint_velocities;
 	}
 	void setJointEfforts(){
@@ -72,5 +75,11 @@ public:
 	double deg2rad(double degree){
 		return degree * M_PI /180;
 	}
+
+	void sendRandomCommand(Franka_robot &franka_robot);
+
+	void sendOneJointCommand(Franka_robot &franka_robot);
+
+	void readFromFileCommand(Franka_robot &franka_robot);
 };
 #endif
