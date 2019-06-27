@@ -141,30 +141,23 @@ namespace franka_robot_controllers{
 			if (std::fabs(distance_to_goal_point)>goal_distance_check_value || seconds_passed <= 0.001) // Seconds_passed prevents oscillations at the first call of the controller. DO NOT DELETE!
 			{				
 				double time_needed_to_stop_with_current_speed_and_acc = position_joint_handles_[joint_id].getVelocity() / joint_accelerations[joint_id]; 
-				std::cout << "joint["<<joint_id<<"] "<< "time_needed_to_stop_with_current_speed_and_acc: " << time_needed_to_stop_with_current_speed_and_acc << std::endl;
-				double distance_needed_to_stop_with_current_speed = joint_accelerations[joint_id]*time_needed_to_stop_with_current_speed_and_acc*time_needed_to_stop_with_current_speed_and_acc/2;
-				std::cout << "joint["<<joint_id<<"] "<< "distance_needed_to_stop_with_current_speed: " << distance_needed_to_stop_with_current_speed << std::endl;
+				
+				double distance_needed_to_stop_with_current_speed = joint_accelerations[joint_id]*time_needed_to_stop_with_current_speed_and_acc*time_needed_to_stop_with_current_speed_and_acc/1.75;				
 
-				if ((( direction == -1 & position_joint_handles_[joint_id].getPosition() > joint_position_goals[joint_id] + distance_needed_to_stop_with_current_speed) || 
-					( direction == 1 & position_joint_handles_[joint_id].getPosition() < joint_position_goals[joint_id] + distance_needed_to_stop_with_current_speed)) & position_joint_handles_[joint_id].getVelocity()>deg2rad(0.1)
+				if ((( direction == -1 & position_joint_handles_[joint_id].getPosition() < joint_position_goals[joint_id] + distance_needed_to_stop_with_current_speed) || 
+					( direction == 1 & position_joint_handles_[joint_id].getPosition() > joint_position_goals[joint_id] - distance_needed_to_stop_with_current_speed)) & std::fabs(position_joint_handles_[joint_id].getVelocity())>deg2rad(0.1)
 					)
-				{
-					std::cout << "slowing" << std::endl;
-					//std::cout << "joint["<<joint_id<<"] "<< "distance_needed_to_stop_with_current_speed: " << distance_needed_to_stop_with_current_speed << std::endl;
-					//current_joint_velocity_limits[joint_id] -= joint_accelerations[joint_id]*period.toSec();
-					current_joint_velocity_limits[joint_id] /= 1.008;
+				{			
+					current_joint_velocity_limits[joint_id] -= joint_accelerations[joint_id]*period.toSec();						
 				}
-				else if (joint_velocity_limits[joint_id] - current_joint_velocity_limits[joint_id] > deg2rad(1) )
+				else if (std::fabs(joint_velocity_limits[joint_id] - std::fabs(position_joint_handles_[joint_id].getVelocity())) > deg2rad(1) )
 				{
-					std::cout << "acceleration" << std::endl;
-					current_joint_velocity_limits[joint_id] += joint_accelerations[joint_id]*period.toSec();
-				}else{
-					std::cout << "max speed" << std::endl;
+					current_joint_velocity_limits[joint_id] += joint_accelerations[joint_id]*period.toSec();				
+				}else{					
 					current_joint_velocity_limits[joint_id] = joint_velocity_limits[joint_id];
 				}
 
-				joint_commands[joint_id] += direction * current_joint_velocity_limits[joint_id]*period.toSec();
-				std::cout << "joint_commands[" << joint_id<<"]: "<<joint_commands[joint_id] << std::endl;
+				joint_commands[joint_id] += (direction) * current_joint_velocity_limits[joint_id]*period.toSec();				
 
 				position_joint_handles_[joint_id].setCommand(joint_commands[joint_id]);
 			}
@@ -174,39 +167,3 @@ namespace franka_robot_controllers{
 // Implementation name_of_your_controller_package::NameOfYourControllerClass,
 PLUGINLIB_EXPORT_CLASS(franka_robot_controllers::JointPositionController,
 	controller_interface::ControllerBase)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-		//std::cout << "period: " << (1/period.toSec()) << std::endl;
-/*
-
-				std::cout << "distance_to_goal_point " << joint_id<<": " << distance_to_goal_point << std::endl;
-				std::cout << "speed_mult[" << joint_id<<"]: " << speed_mult[joint_id] << std::endl;
-				std::cout << "joint_velocity_limits[" << joint_id<<"]: " << joint_velocity_limits[joint_id] << std::endl;
-
-				std::cout << "joint [" << joint_id<<"] distance_to_goal_point: " << distance_to_goal_point<<std::endl;
-				std::cout << "joint_commands[" << joint_id<<"]: " << joint_commands[joint_id]<<std::endl;
-				std::cout << "speed_mult[" << joint_id<<"]: " << speed_mult[joint_id]<<std::endl;
-				std::cout << "joint_velocity_limits[" << joint_id<<"]: " << joint_velocity_limits[joint_id]<<std::endl;
-				*/
