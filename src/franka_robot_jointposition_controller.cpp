@@ -20,7 +20,7 @@ namespace franka_robot_controllers{
 		this->setJointSpeedLimits(msg->velocity); 		
 
 		// Convert received angle joint velocities to radian
-		joint_velocity_limits = {speed_mult[0]*M_PI/180,speed_mult[1]*M_PI/180,speed_mult[2]*M_PI/180,speed_mult[3]*M_PI/180,speed_mult[4]*M_PI/180,speed_mult[5]*M_PI/180,speed_mult[6]*M_PI/180};
+		joint_velocity_limits = {speed_mult[0],speed_mult[1],speed_mult[2],speed_mult[3]			,speed_mult[4],speed_mult[5],speed_mult[6]};
 	}
 
 	bool JointPositionController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& nh){
@@ -36,12 +36,13 @@ namespace franka_robot_controllers{
 		joint_velocity_limits.resize(7);
 		current_joint_velocity_limits.resize(7);
 		//Each joint is acting differently with given commands. These variables make sure they are working without jerk.
-		joint_accelerations = {25,5,25,15,25,25,20};
+
+		// Original acceleration limits from Franka-Emika. They are divided by d, in order to make controller smooth. Second joint affected by the movement of the other joints which is relatively smaller than others.
+		double d = 4;
+		joint_accelerations = {15/d,1,10/d,12.5/d,15/d,20/d,20/d};
 
 		// Subscribe to the teleop_cmd
 		teleop_cmd_sub = nh.subscribe("/franka_robot/teleop_cmd", 1000, &JointPositionController::frankaRobotTeleopCallback, this);
-
-
 
 		position_joint_interface_ = robot_hw->get<hardware_interface::PositionJointInterface>();
 
@@ -103,8 +104,11 @@ namespace franka_robot_controllers{
 		
 		elapsed_time_ = ros::Duration(0.0);
 
-		// This prevents shakes at the beginning
-		//joint_position_goals = {0, -M_PI_4, 0, -3 * M_PI_4, 0, M_PI_2, M_PI_4};
+
+		for (int i = 0; i < 7; ++i)
+		{
+			joint_position_goals[i] = position_joint_handles_[i].getPosition();
+		}
 	}
 
 	void JointPositionController::update(const ros::Time&, const ros::Duration& period){
@@ -130,39 +134,38 @@ namespace franka_robot_controllers{
 			//If distance_to_goal_point is more than this value keep joints working. Less than 0.001 causes problems becareful with oscillations.
 			double goal_distance_check_value = 0.001;	
 			//For joint speed less than 10 deg/s set slowing angle directly 1/20
-			double slowing_distance = joint_velocity_limits[joint_id]/20;
+			double slowing_distance = deg2rad(1);//joint_velocity_limits[joint_id]/5;
 
 			double jVelDeg = rad2deg(joint_velocity_limits[joint_id]);
 
 			if (std::fabs(distance_to_goal_point)>goal_distance_check_value || seconds_passed <= 0.001) // Seconds_passed prevents oscillations at the first call of the controller. DO NOT DELETE!
 			{				
-				//If joint speed is >10 deg/s apply 5+ slowing angle to prevent oscillations. Later decrease it to original value to keep precision.
-				if (joint_velocity_limits[joint_id]>deg2rad(10) & current_joint_velocity_limits[joint_id] > deg2rad(5)){
+				double time_needed_to_stop_with_current_speed_and_acc = position_joint_handles_[joint_id].getVelocity() / joint_accelerations[joint_id]; 
+				std::cout << "joint["<<joint_id<<"] "<< "time_needed_to_stop_with_current_speed_and_acc: " << time_needed_to_stop_with_current_speed_and_acc << std::endl;
+				double distance_needed_to_stop_with_current_speed = joint_accelerations[joint_id]*time_needed_to_stop_with_current_speed_and_acc*time_needed_to_stop_with_current_speed_and_acc/2;
+				std::cout << "joint["<<joint_id<<"] "<< "distance_needed_to_stop_with_current_speed: " << distance_needed_to_stop_with_current_speed << std::endl;
 
-					slowing_distance = deg2rad(5+int(jVelDeg/10));
-				} 		
-				// If absolute distance to goal point is less than slowing distance start slowing.
-				if (std::fabs(distance_to_goal_point) < slowing_distance)
+				if ((( direction == -1 & position_joint_handles_[joint_id].getPosition() > joint_position_goals[joint_id] + distance_needed_to_stop_with_current_speed) || 
+					( direction == 1 & position_joint_handles_[joint_id].getPosition() < joint_position_goals[joint_id] + distance_needed_to_stop_with_current_speed)) & position_joint_handles_[joint_id].getVelocity()>deg2rad(0.1)
+					)
 				{
-					if(debugging) std::cout << "slowing down" << std::endl;
-					current_joint_velocity_limits[joint_id] /= 1.005;
+					std::cout << "slowing" << std::endl;
+					//std::cout << "joint["<<joint_id<<"] "<< "distance_needed_to_stop_with_current_speed: " << distance_needed_to_stop_with_current_speed << std::endl;
+					//current_joint_velocity_limits[joint_id] -= joint_accelerations[joint_id]*period.toSec();
+					current_joint_velocity_limits[joint_id] /= 1.008;
 				}
-				//If joint's speed is less than goal velocity keep accelerating.		
-				else if (std::fabs(joint_velocity_limits[joint_id]-std::fabs(position_joint_handles_[joint_id].getVelocity()))>1*M_PI/180)
+				else if (joint_velocity_limits[joint_id] - current_joint_velocity_limits[joint_id] > deg2rad(1) )
 				{
-					if(debugging) std::cout << "accelerating" << std::endl;
-					current_joint_velocity_limits[joint_id] += joint_accelerations[joint_id]*M_PI/180*period.toSec();
-				}
-				//Reached goal speed, keep it.
-				else{
+					std::cout << "acceleration" << std::endl;
+					current_joint_velocity_limits[joint_id] += joint_accelerations[joint_id]*period.toSec();
+				}else{
+					std::cout << "max speed" << std::endl;
 					current_joint_velocity_limits[joint_id] = joint_velocity_limits[joint_id];
 				}
 
-				if(debugging) std::cout << "current speed: " << position_joint_handles_[joint_id].getVelocity()*180/M_PI << std::endl;
+				joint_commands[joint_id] += direction * current_joint_velocity_limits[joint_id]*period.toSec();
+				std::cout << "joint_commands[" << joint_id<<"]: "<<joint_commands[joint_id] << std::endl;
 
-				//Final command to be sent to the Franka robot.
-				joint_commands[joint_id] += (direction)*current_joint_velocity_limits[joint_id]*period.toSec();
-				//Send the command.
 				position_joint_handles_[joint_id].setCommand(joint_commands[joint_id]);
 			}
 		}
