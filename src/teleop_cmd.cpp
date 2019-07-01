@@ -40,7 +40,7 @@ void Franka_robot::sendRandomCommand(Franka_robot &franka_robot){
 
 	for (int i = 0; i < 7; ++i)
 	{
-		std::cout << "Joint " << i << ": Pos: " << joint_pos[i]*180/M_PI << " Spd: " << joint_spd[i] << std::endl; 	
+		std::cout << "Joint " << i << ": Pos: " << joint_pos[i]*180/M_PI << " Spd: " << joint_spd[i]*180/M_PI << std::endl; 	
 	}
 };
 

@@ -24,10 +24,10 @@ namespace franka_robot_controllers{
         //std::array<double, 7> initial_pose_{};
 
         std::vector<double> initial_pose_;
-        std::vector<double> joint_position_goals;
+        std::vector<double> joint_goal_positions;
         std::vector<double> speed_mult;
-        std::vector<double> joint_velocity_limits;
-        std::vector<double> current_joint_velocity_limits;
+        std::vector<double> joint_goal_velocities;
+        std::vector<double> current_joint_goal_velocities;
         std::vector<double> joint_accelerations;
 
         std::vector<double> joint_commands;
@@ -45,10 +45,10 @@ namespace franka_robot_controllers{
         void frankaRobotTeleopCallback(const sensor_msgs::JointState::ConstPtr& msg);
 
         void setJointPositionGoals(std::vector<double> jointPositionGoalsMessage){
-            joint_position_goals = jointPositionGoalsMessage;}
+            joint_goal_positions = jointPositionGoalsMessage;}
 
         std::vector<double> getJointPositionGoals() const 
-            {return joint_position_goals;}
+            {return joint_goal_positions;}
 
         void setJointSpeedLimits(std::vector<double> jointVelocityMessage)
             {speed_mult = jointVelocityMessage;}    
