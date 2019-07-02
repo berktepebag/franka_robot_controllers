@@ -153,9 +153,7 @@ namespace franka_robot_controllers{
 					current_joint_goal_velocities[joint_id] = (direction) * joint_goal_velocities[joint_id];
 				}
 
-				joint_commands[joint_id] += current_joint_goal_velocities[joint_id]*period.toSec();				
-
-				position_joint_handles_[joint_id].setCommand(joint_commands[joint_id]);
+				joint_commands[joint_id] += current_joint_goal_velocities[joint_id]*period.toSec();	
 			}
 		}
 	}
