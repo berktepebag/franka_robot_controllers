@@ -10,7 +10,8 @@
 #include <ros/node_handle.h>
 #include <ros/time.h>
 #include <sensor_msgs/JointState.h>
-
+//Added
+#include <franka_hw/franka_state_interface.h>
 
 namespace franka_robot_controllers{
 

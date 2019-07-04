@@ -55,9 +55,17 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+add_executable(franka_robot_teleop_vel src/teleop_vel_cmd.cpp)
+target_link_libraries(franka_robot_teleop_vel ${catkin_LIBRARIES})
+include_directories(
+  include
+  ${catkin_INCLUDE_DIRS}
+)
+
 
 add_library(${PROJECT_NAME}
-  src/franka_robot_jointposition_controller.cpp  
+  src/franka_robot_jointposition_controller.cpp
+  src/franka_robot_jointvelocity_controller.cpp  
 )
 add_dependencies(${PROJECT_NAME}
   ${${PROJECT_NAME}_EXPORTED_TARGETS}

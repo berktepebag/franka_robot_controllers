@@ -1,4 +1,4 @@
-#include <franka_robot_jointposition_controller.h>
+#include <franka_robot_jointvelocity_controller.h>
 
 #include <pluginlib/class_list_macros.h>
 
@@ -112,6 +112,10 @@ namespace franka_robot_controllers{
 
 	void JointVelocityController::starting(const ros::Time&) {			
 		elapsed_time_ = ros::Duration(0.0);
+
+		joint_goal_velocities = {0,0,0,0,0,0,0};
+		joint_goal_positions = {0,0,0,0,0,0,0};
+
 	}
 
 	void JointVelocityController::update(const ros::Time&, const ros::Duration& period){
@@ -122,6 +126,14 @@ namespace franka_robot_controllers{
 		elapsed_time_ += period;
 		//Total time passed since controller started converted to the double.
 		double seconds_passed = elapsed_time_.toSec();	
+
+		for (int i = 0; i < 7; ++i)
+		{
+		std::cout << "j["<<i<<"] vel: " << joint_goal_velocities[i] << " pos: " << joint_goal_positions[i]<< std::endl;
+		}
+		 
+
+
 	}
 
 }

@@ -6,4 +6,11 @@
       Franka robot joint position controller, Pascal Institute
     </description>
   </class>
+  <class name="franka_robot_controllers/JointVelocityController"
+         type="franka_robot_controllers::JointVelocityController"
+         base_class_type="controller_interface::ControllerBase">
+    <description>
+      Franka robot joint velocity controller, Pascal Institute
+    </description>
+  </class>
 </library>
