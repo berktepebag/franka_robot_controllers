@@ -25,18 +25,16 @@ namespace franka_robot_controllers{
         //std::array<double, 7> initial_pose_{};
 
         std::vector<double> initial_pose_;
-        std::vector<double> joint_goal_positions;
-        std::vector<double> speed_mult;
+        std::vector<double> joint_goal_duration;
+
         std::vector<double> joint_goal_velocities;
         std::vector<double> current_joint_goal_velocities;
         std::vector<double> joint_accelerations;
 
         std::vector<double> joint_commands;
+        int newSeq;
 
         ros::Subscriber teleop_cmd_sub;
-
-
-
 
     public:
         bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& nh) override;
@@ -45,15 +43,19 @@ namespace franka_robot_controllers{
 
         void frankaRobotTeleopCallback(const sensor_msgs::JointState::ConstPtr& msg);
 
-        void setJointPositionGoals(std::vector<double> jointPositionGoalsMessage){
-            joint_goal_positions = jointPositionGoalsMessage;}
+        void setJointVelocityDurations(std::vector<double> jointPositionGoalsMessage){
+            joint_goal_duration = jointPositionGoalsMessage;}
 
-        std::vector<double> getJointPositionGoals() const 
-            {return joint_goal_positions;}
+        std::vector<double> getJointVelocityDurations() const 
+            {return joint_goal_duration;}
 
         void setJointSpeedLimits(std::vector<double> jointVelocityMessage)
-            {speed_mult = jointVelocityMessage;}    
-            std::vector<double> getJointSpeedLimits(){return speed_mult;}
+            {joint_goal_velocities = jointVelocityMessage;}    
+        
+        std::vector<double> getJointSpeedLimits(){return joint_goal_velocities;}
+
+        void setSeq(int seqMessageReceived){newSeq = seqMessageReceived;}
+        int getSeq(){return newSeq;}
 
         double deg2rad(double degree){
             return degree * M_PI / 180;}
@@ -61,8 +63,13 @@ namespace franka_robot_controllers{
         double rad2deg(double radian){
             return radian / M_PI * 180;}
 
+
+
         bool debugging = false;
         };
+        
+        int currentSeq;
+        double goalDuration;
     }
 
 #endif

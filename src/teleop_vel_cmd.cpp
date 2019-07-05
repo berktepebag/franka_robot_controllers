@@ -40,7 +40,7 @@ void Franka_robot::sendRandomCommand(Franka_robot &franka_robot){
 
 	for (int i = 0; i < 7; ++i)
 	{
-		std::cout << "Joint " << i << ": Pos: " << joint_pos[i]*180/M_PI << " Spd: " << joint_spd[i]*180/M_PI << std::endl; 	
+		std::cout << "Joint " << i << ": duration: " << joint_pos[i]*180/M_PI << " velocity: " << joint_spd[i]*180/M_PI << std::endl; 	
 	}
 };
 
@@ -73,17 +73,17 @@ void Franka_robot::sendOneJointCommand(Franka_robot &franka_robot){
 
 void Franka_robot::readFromFileCommand(Franka_robot &franka_robot){
 
-	std::ifstream infile("/home/student/catkin_ws/src/franka_ros/franka_robot_controller_pi/src/commands.txt");
+	std::ifstream infile("/home/student/catkin_ws/src/franka_ros/franka_robot_controller_pi/src/vel_commands.txt");
 	if (infile.is_open())
 	{	
 		int id;
-		float pos, spd;
+		float duration, velocity;
 		char c;
 
-		while(infile >> id >> c >> pos >> c >> spd && c == ','){
-			std::cout << "id: " << id << " pos: " << pos << " spd: " << spd << std::endl;
-			franka_robot.setJointGoalPosition(id,franka_robot.deg2rad(pos));
-			franka_robot.setJointVelocity(id,franka_robot.deg2rad(spd));
+		while(infile >> id >> c >> velocity >> c >> duration && c == ','){
+			std::cout << "id: " << id << " duration: " << duration << " velocity: " << velocity << std::endl;
+			franka_robot.setJointGoalPosition(id,duration);
+			franka_robot.setJointVelocity(id,franka_robot.deg2rad(velocity));
 		}
 	}
 	else{
