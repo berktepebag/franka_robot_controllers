@@ -26,8 +26,8 @@ namespace franka_robot_controllers{
         std::vector<double> initial_pose_;
         std::vector<double> joint_goal_positions;
         std::vector<double> speed_mult;
-        std::vector<double> joint_goal_velocities;
-        std::vector<double> current_joint_goal_velocities;
+        std::vector<double> desired_joint_velocities;
+        std::vector<double> current_joint_velocity_commands;
         std::vector<double> joint_accelerations;
 
         std::vector<double> joint_commands;

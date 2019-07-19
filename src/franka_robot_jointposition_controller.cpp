@@ -20,7 +20,7 @@ namespace franka_robot_controllers{
 		this->setJointSpeedLimits(msg->velocity); 		
 
 		// Convert received angle joint velocities to radian
-		joint_goal_velocities = {speed_mult[0],speed_mult[1],speed_mult[2],speed_mult[3]			,speed_mult[4],speed_mult[5],speed_mult[6]};
+		desired_joint_velocities = {speed_mult[0],speed_mult[1],speed_mult[2],speed_mult[3]			,speed_mult[4],speed_mult[5],speed_mult[6]};
 	}
 
 	bool JointPositionController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& nh){
@@ -33,8 +33,8 @@ namespace franka_robot_controllers{
 		// Set joint commands size equal to joint number
 		joint_commands.resize(7);
 		// Set Velocity limits size equal to joint number
-		joint_goal_velocities.resize(7);
-		current_joint_goal_velocities.resize(7);
+		desired_joint_velocities.resize(7);
+		current_joint_velocity_commands.resize(7);
 		//Each joint is acting differently with given commands. These variables make sure they are working without jerk.
 
 		// Original acceleration limits from Franka-Emika. They are divided by d, in order to make controller smooth. Second joint affected by the movement of the other joints which is relatively smaller than others.
@@ -136,24 +136,27 @@ namespace franka_robot_controllers{
 
 			if (std::fabs(distance_to_goal_point)>goal_distance_check_value || seconds_passed <= 0.001) // Seconds_passed prevents oscillations at the first call of the controller. DO NOT DELETE!
 			{				
-				double time_needed_to_stop_with_current_speed_and_acc = position_joint_handles_[joint_id].getVelocity() / joint_accelerations[joint_id]; 
+				double time_needed_to_stop_with_current_vel_and_acc = position_joint_handles_[joint_id].getVelocity() / joint_accelerations[joint_id]; 
 				
-				double distance_needed_to_stop_with_current_speed = joint_accelerations[joint_id]*time_needed_to_stop_with_current_speed_and_acc*time_needed_to_stop_with_current_speed_and_acc/1.5;				
-
-				if ((( direction == -1 & position_joint_handles_[joint_id].getPosition() < joint_goal_positions[joint_id] + distance_needed_to_stop_with_current_speed) || 
-					( direction == 1 & position_joint_handles_[joint_id].getPosition() > joint_goal_positions[joint_id] - distance_needed_to_stop_with_current_speed)) & std::fabs(position_joint_handles_[joint_id].getVelocity())>deg2rad(0.1)
+				double distance_needed_to_stop_with_current_vel = joint_accelerations[joint_id]*time_needed_to_stop_with_current_vel_and_acc*time_needed_to_stop_with_current_vel_and_acc/2;				
+				//Deceleration
+				if ((( direction == -1 & position_joint_handles_[joint_id].getPosition() < joint_goal_positions[joint_id] + distance_needed_to_stop_with_current_vel) || 
+					( direction == 1 & position_joint_handles_[joint_id].getPosition() > joint_goal_positions[joint_id] - distance_needed_to_stop_with_current_vel)) & std::fabs(position_joint_handles_[joint_id].getVelocity())>deg2rad(0.1)
 					)
 				{			
-					current_joint_goal_velocities[joint_id] -= (direction) * joint_accelerations[joint_id]*period.toSec();						
+					current_joint_velocity_commands[joint_id] -= (direction) * joint_accelerations[joint_id]*period.toSec();						
 				}
-				else if (std::fabs(joint_goal_velocities[joint_id] - std::fabs(position_joint_handles_[joint_id].getVelocity())) > deg2rad(1) )
+				//Acceleration
+				else if (std::fabs(desired_joint_velocities[joint_id] - std::fabs(position_joint_handles_[joint_id].getVelocity())) > deg2rad(1) )
 				{
-					current_joint_goal_velocities[joint_id] += (direction) * joint_accelerations[joint_id]*period.toSec();				
-				}else{					
-					current_joint_goal_velocities[joint_id] = (direction) * joint_goal_velocities[joint_id];
+					current_joint_velocity_commands[joint_id] += (direction) * joint_accelerations[joint_id]*period.toSec();				
+				}
+				//Constant Velocity
+				else{					
+					current_joint_velocity_commands[joint_id] = (direction) * desired_joint_velocities[joint_id];
 				}
 
-				joint_commands[joint_id] += current_joint_goal_velocities[joint_id]*period.toSec();				
+				joint_commands[joint_id] += current_joint_velocity_commands[joint_id]*period.toSec();				
 
 				position_joint_handles_[joint_id].setCommand(joint_commands[joint_id]);
 			}
