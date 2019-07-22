@@ -43,33 +43,30 @@ namespace franka_robot_controllers{
 
         void frankaRobotTeleopCallback(const sensor_msgs::JointState::ConstPtr& msg);
 
-        void setJointVelocityDurations(std::vector<double> jointPositionGoalsMessage){
-            joint_goal_duration = jointPositionGoalsMessage;}
+        void setJointVelocityDurations(std::vector<double> jointPositionGoalsMessage){joint_goal_duration = jointPositionGoalsMessage;}
 
         std::vector<double> getJointVelocityDurations() const 
-            {return joint_goal_duration;}
+        {return joint_goal_duration;}
 
         void setJointSpeedLimits(std::vector<double> jointVelocityMessage)
-            {joint_goal_velocities = jointVelocityMessage;}    
-        
+        {joint_goal_velocities = jointVelocityMessage;}    
+
         std::vector<double> getJointSpeedLimits(){return joint_goal_velocities;}
 
         void setSeq(int seqMessageReceived){newSeq = seqMessageReceived;}
+
         int getSeq(){return newSeq;}
 
-        double deg2rad(double degree){
-            return degree * M_PI / 180;}
+        double deg2rad(double degree){return degree * M_PI / 180;}
 
-        double rad2deg(double radian){
-            return radian / M_PI * 180;}
+        double rad2deg(double radian){return radian / M_PI * 180;}
 
+        bool debugging = false;};
 
-
-        bool debugging = false;
-        };
-        
-        int currentSeq;
+        int currentSeq = -1;
         double goalDuration;
+        std::vector<double> joint_stop_seconds;
+        std::vector<bool> joint_is_moving;
     }
 
 #endif

@@ -98,48 +98,69 @@ namespace franka_robot_controllers{
 		void JointVelocityController::starting(const ros::Time&) {			
 			elapsed_time_ = ros::Duration(0.0);
 
+			//Set received joint goal velocities to zero
 			joint_goal_velocities = {0,0,0,0,0,0,0};
+			//Set current joint goal durations to zero to prevent unexpected moves
 			joint_goal_duration = {0,0,0,0,0,0,0};
+			//Set current joint goal velocities to zero to prevent unexpected moves
 			current_joint_goal_velocities = {0,0,0,0,0,0,0};
+			//Set time to stop zero
+			joint_stop_seconds = {0,0,0,0,0,0,0};
+			//Set joints as not moving
+			joint_is_moving = {false,false,false,false,false,false,false,};
 
+			//Set current sequence to -1 since 0 is first command we do not want to miss first command received
 			currentSeq = -1;
-			goalDuration = 0;
 		}
 
 		void JointVelocityController::update(const ros::Time&, const ros::Duration& period){
 
-		//Get teleop_cmd values from related topic.
+			//Get teleop_cmd values from related topic.
 			ros::spinOnce();
-		//Total time passed since controller started in ROS::time
+			//Total time passed since controller started in ROS::time
 			elapsed_time_ += period;
-		//Total time passed since controller started converted to the double.
-			double seconds_passed = elapsed_time_.toSec();	
-			
-			//ROS_INFO("seq: %d currentSeq: %d",getSeq(), currentSeq);
-			//ROS_INFO("seconds_passed: %d goalDuration %d", seconds_passed, goalDuration);
+			//Total time passed since controller started converted to the double.
+			double seconds_passed = elapsed_time_.toSec();				
 
+			//Indicate if current sequence is not equal to received sequence. Fixes sequence problems.
+			if(getSeq()!=currentSeq) {
+				ROS_INFO("Received Seq: %d currentSeq: %d",getSeq(),currentSeq);
+				
+				//Sometimes sequence is stuck at memory, check if this is the case and equalize...
+				if(std::fabs(std::fabs(getSeq())-std::fabs(currentSeq))>1) 
+				{
+					ROS_WARN("Difference between two sequences is larger than 1, equalizing...");
+					currentSeq = getSeq()-1;
+				}
 
+				ROS_INFO("After equalization-> Received Seq: %d currentSeq: %d",getSeq(),currentSeq);
+			}
+
+			//If new message received set velocities and durations
 			if (getSeq() > currentSeq)
-			{
+			{				
 				for (int i = 0; i < 7; ++i)
 				{
 					current_joint_goal_velocities[i] =  joint_goal_velocities[i];
-					goalDuration = seconds_passed + getJointVelocityDurations()[0];	
+					joint_stop_seconds[i] = seconds_passed + getJointVelocityDurations()[i];	
+					//ROS_INFO("Joint Stop Seconds: %f",joint_stop_seconds[i]);
 				}
 				currentSeq = getSeq();
+				ROS_INFO("After command-> Received Seq: %d currentSeq: %d",getSeq(),currentSeq);
 			}
-			if (seconds_passed >= goalDuration)
+
+			//Stop the joint if time exceeds the goal duration
+			for (int i = 0; i < 7; ++i)
 			{
-				for (int i = 0; i < 7; ++i)
+				if (seconds_passed >= joint_stop_seconds[i])
 				{
 					current_joint_goal_velocities[i] = 0.000001;
 				}
 			}
 
+			//Set commands according to the received command message
 			for (int i = 0; i < 7; ++i)
 			{
-				//ROS_INFO("velocity_joint_handles_[%d]: %d",i,velocity_joint_handles_[i]);
-
 				velocity_joint_handles_[i].setCommand(current_joint_goal_velocities[i]);
 			}
 
