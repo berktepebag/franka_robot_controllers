@@ -48,8 +48,8 @@ catkin_package(
   DEPENDS Franka
 )
 
-add_executable(franka_robot_teleop src/teleop_cmd.cpp)
-target_link_libraries(franka_robot_teleop ${catkin_LIBRARIES})
+add_executable(franka_robot_interactive_marker_follow src/follow_interactive_marker.cpp)
+target_link_libraries(franka_robot_interactive_marker_follow ${catkin_LIBRARIES})
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
