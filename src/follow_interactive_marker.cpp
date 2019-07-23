@@ -5,6 +5,18 @@
 // Kinematics
 #include <moveit_msgs/GetPositionIK.h>
 
+geometry_msgs::Pose planned_pose;
+std::vector<double> joint_group_positions = {0*M_PI/180, -M_PI_4*M_PI/180, 0*M_PI/180, -3 * M_PI_4*M_PI/180, 0*M_PI/180, M_PI_2*M_PI/180, M_PI_4*M_PI/180};
+
+void frankaRobotTeleopCallback(const visualization_msgs::InteractiveMarkerUpdate::ConstPtr& msg) {
+
+	ROS_INFO("Received message");
+
+	planned_pose = msg->poses[0].pose;	
+}
+
+
+
 int main(int argc, char **argv)
 {
 	Franka_robot franka_robot;
@@ -18,6 +30,10 @@ int main(int argc, char **argv)
 
 	ros::Publisher teleop_cmd_pub = nh.advertise<sensor_msgs::JointState>("franka_robot/teleop_cmd", 1000);
 	ros::Rate loop_rate(50);
+
+	//Subscribe to moveit's interactive marker pose
+	ros::Subscriber marker_sub = nh.subscribe("/rviz_moveit_motion_planning_display/robot_interaction_interactive_marker_topic/update", 1, &frankaRobotTeleopCallback);
+	
 
 	//IK solver service begin
 	ros::ServiceClient service_client = nh.serviceClient<moveit_msgs::GetPositionIK>("compute_ik");
@@ -49,32 +65,41 @@ int main(int argc, char **argv)
 
 		franka_robot.setJointVelocitiesOne();
 
+		/*
+		ROS_INFO("Pose x: %f", planned_pose.position.x);
+		ROS_INFO("Pose y: %f", planned_pose.position.y);
+		ROS_INFO("Pose z: %f", planned_pose.position.z);
+		*/
+
+
 		service_request.ik_request.group_name = "panda_arm";
-		service_request.ik_request.pose_stamped.pose.position.x = 0.088;
-		service_request.ik_request.pose_stamped.pose.position.y = 0.0;
-		service_request.ik_request.pose_stamped.pose.position.z = 0.0;
+		service_request.ik_request.pose_stamped.pose.position.x = planned_pose.position.x;
+		service_request.ik_request.pose_stamped.pose.position.y = planned_pose.position.y;
+		service_request.ik_request.pose_stamped.pose.position.z = planned_pose.position.z;
 
-		service_request.ik_request.pose_stamped.pose.orientation.x = 0.623742313489;
-		service_request.ik_request.pose_stamped.pose.orientation.y = -0.333084863602;
-		service_request.ik_request.pose_stamped.pose.orientation.z = 0.333084863604;
-		service_request.ik_request.pose_stamped.pose.orientation.w = 0.623742313492;
+		service_request.ik_request.pose_stamped.pose.orientation.x = planned_pose.orientation.x;
+		service_request.ik_request.pose_stamped.pose.orientation.y = planned_pose.orientation.y;
+		service_request.ik_request.pose_stamped.pose.orientation.z = planned_pose.orientation.z;
+		service_request.ik_request.pose_stamped.pose.orientation.w = planned_pose.orientation.w;
 
-  		/* Call the service */
+  		//Call the service
 		service_client.call(service_request, service_response);
 		ROS_INFO_STREAM(
 			"Result: " << ((service_response.error_code.val == service_response.error_code.SUCCESS) ? "True " : "False ")
 			<< service_response.error_code.val);
 
-		std::vector<double> joint_group_positions;
+		
 
 
 		for (int i = 0; i < 7; ++i)
 		{		
-			ROS_INFO("Converted from Pose to Joint Space with IK-> Joint %d position: %f",i,service_response.solution.joint_state.position[i]);			
+			ROS_INFO("Converted from Pose to Joint Space with IK-> Joint %d position: %f",i,service_response.solution.joint_state.position[i]*180/M_PI);		
+			joint_group_positions[i] = 	service_response.solution.joint_state.position[i];
 		}
+		
 
-		joint_state_msg.velocity = franka_robot.getJointVelocities();
-		joint_state_msg.position = franka_robot.getJointGoalPositions();
+		joint_state_msg.velocity = {0.02,0.02,0.02,0.02,0.02,0.02,0.02};
+		joint_state_msg.position = joint_group_positions;
 
 		teleop_cmd_pub.publish(joint_state_msg);
 		ros::spinOnce();

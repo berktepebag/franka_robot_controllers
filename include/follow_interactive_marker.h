@@ -5,6 +5,8 @@
 
 #include <ros/ros.h>
 #include <sensor_msgs/JointState.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <visualization_msgs/InteractiveMarkerUpdate.h>
 
 #include <iostream>
 #include <sstream>
@@ -18,11 +20,10 @@ private:
 	std::vector<double> joint_velocities;
 	std::vector<double> joint_efforts;
 
-	
+
 public:
 	int const FRANKA_ROBOT_JOINT_NUMBER = 7;
 	std::vector<double> const  start_pose = {0, -M_PI_4, 0, -3 * M_PI_4, 0, M_PI_2, M_PI_4};
-
 
 	void setJointNames(){
 		//Sets default names
@@ -75,5 +76,8 @@ public:
 	double deg2rad(double degree){
 		return degree * M_PI /180;
 	}
+
+	
+
 };
 #endif
